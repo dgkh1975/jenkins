@@ -11,7 +11,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
-import static org.hamcrest.CoreMatchers.*;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -306,8 +307,8 @@ public class ParametersAction2Test {
 
         assertEquals(1, p1.getLastBuild().getAction(ParametersAction.class).getParameters().size());
         assertEquals(1, p2.getLastBuild().getAction(ParametersAction.class).getParameters().size());
-        assertEquals(p1.getLastBuild().getAction(ParametersAction.class).getParameter("foo").getValue(), "for p1");
-        assertEquals(p2.getLastBuild().getAction(ParametersAction.class).getParameter("foo").getValue(), "for p2");
+        assertEquals("for p1", p1.getLastBuild().getAction(ParametersAction.class).getParameter("foo").getValue());
+        assertEquals("for p2", p2.getLastBuild().getAction(ParametersAction.class).getParameter("foo").getValue());
     }
 
     @Issue("JENKINS-49573")

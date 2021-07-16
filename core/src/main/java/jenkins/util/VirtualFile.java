@@ -45,11 +45,11 @@ import java.net.URI;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Level;
@@ -277,7 +277,7 @@ public abstract class VirtualFile implements Comparable<VirtualFile>, Serializab
      * @param noFollowLinks if true then do not follow links.
      * @return a list of {@code /}-separated relative names of children (files directly inside or in subdirectories)
      * @throws IOException if this is not a directory, or listing was not possible for some other reason
-     * @since TODO
+     * @since 2.275 and 2.263.2
      */
     @Restricted(NoExternalUse.class)
     public @NonNull Collection<String> list(@NonNull String includes, @CheckForNull String excludes, boolean useDefaultExcludes,
@@ -350,7 +350,7 @@ public abstract class VirtualFile implements Comparable<VirtualFile>, Serializab
      *               If non-empty, a trailing slash will be enforced.
      * @return the number of files inside the archive (not the folders)
      * @throws IOException if this is not a directory, or listing was not possible for some other reason
-     * @since TODO
+     * @since 2.275 and 2.263.2
      */
     public int zip(OutputStream outputStream, String includes, String excludes, boolean useDefaultExcludes,
                    boolean noFollowLinks, String prefix) throws IOException {
@@ -813,7 +813,7 @@ public abstract class VirtualFile implements Comparable<VirtualFile>, Serializab
                 return "";
             }
             
-            Deque<String> relativePath = new LinkedList<>();
+            Deque<String> relativePath = new ArrayDeque<>();
             File current = this.f;
             while (current != null && !current.equals(this.root)) {
                 relativePath.addFirst(current.getName());
@@ -1093,7 +1093,7 @@ public abstract class VirtualFile implements Comparable<VirtualFile>, Serializab
                 return "";
             }
 
-            LinkedList<String> relativePath = new LinkedList<>();
+            Deque<String> relativePath = new ArrayDeque<>();
             FilePath current = this.f;
             while (current != null && !current.equals(this.root)) {
                 relativePath.addFirst(current.getName());
@@ -1117,7 +1117,7 @@ public abstract class VirtualFile implements Comparable<VirtualFile>, Serializab
             this.noFollowLinks = noFollowLinks;
         }
 
-        public Scanner(String includes, String excludes, boolean useDefaultExcludes) {
+        Scanner(String includes, String excludes, boolean useDefaultExcludes) {
             this(includes, excludes, useDefaultExcludes, null, false);
         }
 

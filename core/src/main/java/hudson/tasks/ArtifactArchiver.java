@@ -323,6 +323,7 @@ public class ArtifactArchiver extends Recorder implements SimpleBuildStep {
         }
     }
 
+    @Override
     public BuildStepMonitor getRequiredMonitorService() {
         return BuildStepMonitor.NONE;
     }
@@ -341,6 +342,7 @@ public class ArtifactArchiver extends Recorder implements SimpleBuildStep {
             DESCRIPTOR = this; // backward compatibility
         }
 
+        @Override
         public String getDisplayName() {
             return Messages.ArtifactArchiver_DisplayName();
         }
@@ -366,6 +368,7 @@ public class ArtifactArchiver extends Recorder implements SimpleBuildStep {
             return req.bindJSON(ArtifactArchiver.class,formData);
         }
 
+        @Override
         public boolean isApplicable(Class<? extends AbstractProject> jobType) {
             return true;
         }

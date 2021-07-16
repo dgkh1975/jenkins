@@ -23,7 +23,6 @@
  */
 package hudson;
 
-import com.google.common.collect.Lists;
 import com.thoughtworks.xstream.XStream;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
@@ -45,6 +44,7 @@ import java.net.PasswordAuthentication;
 import java.net.Proxy;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -183,7 +183,7 @@ public final class ProxyConfiguration extends AbstractDescribableImpl<ProxyConfi
      */
     @Deprecated
     public String getEncryptedPassword() {
-        return (secretPassword == null) ? null : secretPassword.getEncryptedValue();
+        return secretPassword == null ? null : secretPassword.getEncryptedValue();
     }
 
     public String getTestUrl() {
@@ -215,7 +215,7 @@ public final class ProxyConfiguration extends AbstractDescribableImpl<ProxyConfi
     public static List<Pattern> getNoProxyHostPatterns(String noProxyHost) {
         if (noProxyHost==null)  return Collections.emptyList();
 
-        List<Pattern> r = Lists.newArrayList();
+        List<Pattern> r = new ArrayList<>();
         for (String s : noProxyHost.split("[ \t\n,|]+")) {
             if (s.length()==0)  continue;
             r.add(Pattern.compile(s.replace(".", "\\.").replace("*", ".*")));
@@ -266,6 +266,7 @@ public final class ProxyConfiguration extends AbstractDescribableImpl<ProxyConfi
         return new Proxy(Proxy.Type.HTTP, new InetSocketAddress(name,port));
     }
 
+    @Override
     public void save() throws IOException {
         if(BulkChange.contains(this))   return;
         XmlFile config = getXmlFile();
@@ -343,7 +344,6 @@ public final class ProxyConfiguration extends AbstractDescribableImpl<ProxyConfi
     /**
      * If the first URL we try to access with a HTTP proxy is HTTPS then the authentication cache will not have been
      * pre-populated, so we try to access at least one HTTP URL before the very first HTTPS url.
-     * @param proxy
      * @param url the actual URL being opened.
      */
     private void jenkins48775workaround(Proxy proxy, URL url) {

@@ -76,6 +76,7 @@ public class LabelExpressionTest {
 
         FreeStyleProject p1 = j.createFreeStyleProject();
         p1.getBuildersList().add(new TestBuilder() {
+            @Override
             public boolean perform(AbstractBuild<?, ?> build, Launcher launcher, BuildListener listener) throws InterruptedException, IOException {
                 seq.phase(0); // first, make sure the w32 agent is occupied
                 seq.phase(2);
@@ -137,17 +138,17 @@ public class LabelExpressionTest {
     }
 
     /**
-     * Make sure we can reset the label of an existing slave.
+     * Make sure we can reset the label of an existing agent.
      */
     @Test
     public void setLabelString() throws Exception {
         DumbSlave s = j.createSlave("foo", "", null);
 
-        assertSame(s.getLabelString(), "");
+        assertSame("", s.getLabelString());
 
         s.setLabelString("bar");
 
-        assertSame(s.getLabelString(), "bar");
+        assertSame("bar", s.getLabelString());
     }
 
     /**
@@ -175,7 +176,7 @@ public class LabelExpressionTest {
     }
 
     private void parseAndVerify(String expected, String expr) throws ANTLRException {
-        assertEquals(expected, LabelExpression.parseExpression(expr).getName());
+        assertEquals(expected, Label.parseExpression(expr).getName());
     }
 
     @Test
@@ -188,8 +189,8 @@ public class LabelExpressionTest {
     public void laxParsing() {
         // this should parse as an atom
         LabelAtom l = (LabelAtom) j.jenkins.getLabel("lucene.zones.apache.org (Solaris 10)");
-        assertEquals(l.getName(),"lucene.zones.apache.org (Solaris 10)");
-        assertEquals(l.getExpression(),"\"lucene.zones.apache.org (Solaris 10)\"");
+        assertEquals("lucene.zones.apache.org (Solaris 10)", l.getName());
+        assertEquals("\"lucene.zones.apache.org (Solaris 10)\"", l.getExpression());
     }
 
     @Test
@@ -243,7 +244,7 @@ public class LabelExpressionTest {
 
     private void parseShouldFail(String expr) {
         try {
-            LabelExpression.parseExpression(expr);
+            Label.parseExpression(expr);
             fail(expr + " should fail to parse");
         } catch (ANTLRException e) {
             // expected
@@ -253,6 +254,7 @@ public class LabelExpressionTest {
     @Test
     public void formValidation() throws Exception {
         j.executeOnServer(new Callable<Object>() {
+            @Override
             public Object call() throws Exception {
                 Label l = j.jenkins.getLabel("foo");
                 DumbSlave s = j.createSlave(l);

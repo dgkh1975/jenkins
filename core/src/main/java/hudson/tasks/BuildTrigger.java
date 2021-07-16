@@ -165,6 +165,7 @@ public class BuildTrigger extends Recorder implements DependencyDeclarer {
         return Items.fromNameList(owner.getParent(), childProjects, (Class<Job<?, ?>>) (Class) Job.class);
     }
 
+    @Override
     public BuildStepMonitor getRequiredMonitorService() {
         return BuildStepMonitor.NONE;
     }
@@ -259,6 +260,7 @@ public class BuildTrigger extends Recorder implements DependencyDeclarer {
                 graph.getDownstreamDependencies(build.getProject()));
         // Sort topologically
         downstreamProjects.sort(new Comparator<Dependency>() {
+            @Override
             public int compare(Dependency lhs, Dependency rhs) {
                 // Swapping lhs/rhs to get reverse sort:
                 return graph.compare(rhs.getDownstreamProject(), lhs.getDownstreamProject());
@@ -289,6 +291,7 @@ public class BuildTrigger extends Recorder implements DependencyDeclarer {
         return true;
     }
 
+    @Override
     public void buildDependencyGraph(AbstractProject owner, DependencyGraph graph) {
         for (AbstractProject p : getChildProjects(owner)) // only care about AbstractProject here
             graph.addDependency(new Dependency(owner, p) {
@@ -345,7 +348,7 @@ public class BuildTrigger extends Recorder implements DependencyDeclarer {
     }
 
     /**
-     * Correct broken data gracefully (#1537)
+     * Correct broken data gracefully (JENKINS-1537)
      */
     private Object readResolve() {
         if(childProjects==null)
@@ -355,6 +358,7 @@ public class BuildTrigger extends Recorder implements DependencyDeclarer {
 
     @Extension @Symbol("downstream")
     public static class DescriptorImpl extends BuildStepDescriptor<Publisher> {
+        @Override
         public String getDisplayName() {
             return Messages.BuildTrigger_DisplayName();
         }

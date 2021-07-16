@@ -25,6 +25,7 @@
 package hudson.model;
 
 import com.infradna.tool.bridge_method_injector.WithBridgeMethods;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.AbortException;
 import hudson.XmlFile;
 import hudson.Util;
@@ -53,6 +54,7 @@ import jenkins.model.DirectlyModifiableTopLevelItemGroup;
 import jenkins.model.Jenkins;
 import jenkins.model.queue.ItemDeletion;
 import jenkins.security.NotReallyRoleSensitiveCallable;
+import jenkins.util.SystemProperties;
 import jenkins.util.xml.XMLUtils;
 
 import org.apache.tools.ant.taskdefs.Copy;
@@ -134,6 +136,7 @@ public abstract class AbstractItem extends Actionable implements Item, HttpDelet
         doSetName(name);
     }
 
+    @Override
     @Exported(visibility=999)
     public String getName() {
         return name;
@@ -160,6 +163,7 @@ public abstract class AbstractItem extends Actionable implements Item, HttpDelet
      * @return The display name of this object, or if it is not set, the name
      * of the object.
      */
+    @Override
     @Exported
     public String getDisplayName() {
         if(null!=displayName) {
@@ -184,8 +188,6 @@ public abstract class AbstractItem extends Actionable implements Item, HttpDelet
      * This method exists so that the Job configuration pages can use 
      * getDisplayNameOrNull so that nothing is shown in the display name text
      * box if the display name is not set.
-     * @param displayName
-     * @throws IOException
      */
     public void setDisplayNameOrNull(String displayName) throws IOException {
         setDisplayName(displayName);
@@ -196,6 +198,7 @@ public abstract class AbstractItem extends Actionable implements Item, HttpDelet
         save();
     }
              
+    @Override
     public File getRootDir() {
         return getParent().getRootDirFor(this);
     }
@@ -470,8 +473,10 @@ public abstract class AbstractItem extends Actionable implements Item, HttpDelet
     /**
      * Gets all the jobs that this {@link Item} contains as descendants.
      */
+    @Override
     public abstract Collection<? extends Job> getAllJobs();
 
+    @Override
     @Exported
     public final String getFullName() {
         String n = getParent().getFullName();
@@ -479,6 +484,7 @@ public abstract class AbstractItem extends Actionable implements Item, HttpDelet
         else                return n+'/'+getName();
     }
 
+    @Override
     @Exported
     public final String getFullDisplayName() {
         String n = getParent().getFullDisplayName();
@@ -511,6 +517,7 @@ public abstract class AbstractItem extends Actionable implements Item, HttpDelet
      * Called right after when a {@link Item} is loaded from disk.
      * This is an opportunity to do a post load processing.
      */
+    @Override
     public void onLoad(ItemGroup<? extends Item> parent, String name) throws IOException {
         this.parent = parent;
         doSetName(name);
@@ -528,9 +535,11 @@ public abstract class AbstractItem extends Actionable implements Item, HttpDelet
      * @param src
      *      Item from which it's copied from. The same type as {@code this}. Never null.
      */
+    @Override
     public void onCopiedFrom(Item src) {
     }
 
+    @Override
     public final String getUrl() {
         // try to stick to the current view if possible
         StaplerRequest req = Stapler.getCurrentRequest();
@@ -571,12 +580,14 @@ public abstract class AbstractItem extends Actionable implements Item, HttpDelet
         return base + shortUrl;
     }
 
+    @Override
     public String getShortUrl() {
         String prefix = getParent().getUrlChildPrefix();
         String subdir = Util.rawEncode(getName());
         return prefix.equals(".") ? subdir + '/' : prefix + '/' + subdir + '/';
     }
 
+    @Override
     public String getSearchUrl() {
         return getShortUrl();
     }
@@ -597,6 +608,7 @@ public abstract class AbstractItem extends Actionable implements Item, HttpDelet
     /**
      * Returns the {@link ACL} for this object.
      */
+    @Override
     public ACL getACL() {
         return Jenkins.get().getAuthorizationStrategy().getACL(this);
     }
@@ -604,6 +616,7 @@ public abstract class AbstractItem extends Actionable implements Item, HttpDelet
     /**
      * Save the settings to a file.
      */
+    @Override
     public synchronized void save() throws IOException {
         if(BulkChange.contains(this))   return;
         getConfigFile().write(this);
@@ -671,6 +684,7 @@ public abstract class AbstractItem extends Actionable implements Item, HttpDelet
         rsp.sendRedirect2(req.getContextPath() + '/' + url);
     }
 
+    @Override
     public void delete( StaplerRequest req, StaplerResponse rsp ) throws IOException, ServletException {
         try {
             delete();
@@ -688,6 +702,7 @@ public abstract class AbstractItem extends Actionable implements Item, HttpDelet
      * Any exception indicates the deletion has failed, but {@link AbortException} would prevent the caller
      * from showing the stack trace. This
      */
+    @Override
     public void delete() throws IOException, InterruptedException {
         checkPermission(DELETE);
         boolean responsibleForAbortingBuilds = !ItemDeletion.contains(this);
@@ -945,10 +960,10 @@ public abstract class AbstractItem extends Actionable implements Item, HttpDelet
     @Restricted(NoExternalUse.class)
     public Object getTarget() {
         if (!SKIP_PERMISSION_CHECK) {
-            if (!getACL().hasPermission(Item.DISCOVER)) {
+            if (!hasPermission(Item.DISCOVER)) {
                 return null;
             }
-            getACL().checkPermission(Item.READ);
+            checkPermission(Item.READ);
         }
         return this;
     }
@@ -957,7 +972,8 @@ public abstract class AbstractItem extends Actionable implements Item, HttpDelet
      * Escape hatch for StaplerProxy-based access control
      */
     @Restricted(NoExternalUse.class)
-    public static /* Script Console modifiable */ boolean SKIP_PERMISSION_CHECK = Boolean.getBoolean(AbstractItem.class.getName() + ".skipPermissionCheck");
+    @SuppressFBWarnings("MS_SHOULD_BE_FINAL")
+    public static /* Script Console modifiable */ boolean SKIP_PERMISSION_CHECK = SystemProperties.getBoolean(AbstractItem.class.getName() + ".skipPermissionCheck");
 
     /**
      * Used for CLI binding.

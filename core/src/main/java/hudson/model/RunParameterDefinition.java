@@ -63,6 +63,7 @@ public class RunParameterDefinition extends SimpleParameterDefinition {
     private final String runId;
     private final RunParameterFilter filter;
 
+    // TODO consider a simplified @DataBoundConstructor using @DataBoundSetter for description & filter
     /**
      * @since 1.517
      */
@@ -116,7 +117,7 @@ public class RunParameterDefinition extends SimpleParameterDefinition {
     @Exported
     public RunParameterFilter getFilter() {
     	// if filter is null, default to RunParameterFilter.ALL
-        return (null == filter) ? RunParameterFilter.ALL : filter;
+        return null == filter ? RunParameterFilter.ALL : filter;
     }
 
     /**
@@ -203,6 +204,7 @@ public class RunParameterDefinition extends SimpleParameterDefinition {
         return value;
     }
 
+    @Override
     public RunParameterValue createValue(String value) {
         return new RunParameterValue(getName(), value, getDescription());
     }

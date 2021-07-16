@@ -69,14 +69,17 @@ public class BatchFile extends CommandInterpreter {
 
     private Integer unstableReturn;
 
+    @Override
     public String[] buildCommandLine(FilePath script) {
         return new String[] {"cmd","/c","call",script.getRemote()};
     }
 
+    @Override
     protected String getContents() {
         return LineEndingConversion.convertEOL(command+"\r\nexit %ERRORLEVEL%",LineEndingConversion.EOLType.Windows);
     }
 
+    @Override
     protected String getFileExtension() {
         return ".bat";
     }
@@ -111,6 +114,7 @@ public class BatchFile extends CommandInterpreter {
             return "/help/project-config/batch.html";
         }
 
+        @Override
         public String getDisplayName() {
             return Messages.BatchFile_DisplayName();
         }
@@ -139,6 +143,7 @@ public class BatchFile extends CommandInterpreter {
             return FormValidation.ok();
         }
 
+        @Override
         public boolean isApplicable(Class<? extends AbstractProject> jobType) {
             return true;
         }

@@ -154,6 +154,7 @@ public class TarOutputStream extends FilterOutputStream {
      * TarBuffer's close().
      * @throws IOException on error
      */
+    @Override
     public void close() throws IOException {
         if (!closed) {
             this.finish();
@@ -257,6 +258,7 @@ public class TarOutputStream extends FilterOutputStream {
      * @param b The byte written.
      * @throws IOException on error
      */
+    @Override
     public void write(int b) throws IOException {
         this.oneBuf[0] = (byte) b;
 
@@ -271,6 +273,7 @@ public class TarOutputStream extends FilterOutputStream {
      * @param wBuf The buffer to write to the archive.
      * @throws IOException on error
      */
+    @Override
     public void write(byte[] wBuf) throws IOException {
         this.write(wBuf, 0, wBuf.length);
     }
@@ -289,8 +292,9 @@ public class TarOutputStream extends FilterOutputStream {
      * @param numToWrite The number of bytes to write.
      * @throws IOException on error
      */
+    @Override
     public void write(byte[] wBuf, int wOffset, int numToWrite) throws IOException {
-        if ((this.currBytes + numToWrite) > this.currSize) {
+        if (this.currBytes + numToWrite > this.currSize) {
             throw new IOException("request to write '" + numToWrite
                                   + "' bytes exceeds size in header of '"
                                   + this.currSize + "' bytes for entry '"
@@ -306,7 +310,7 @@ public class TarOutputStream extends FilterOutputStream {
         }
 
         if (this.assemLen > 0) {
-            if ((this.assemLen + numToWrite) >= this.recordBuf.length) {
+            if (this.assemLen + numToWrite >= this.recordBuf.length) {
                 int aLen = this.recordBuf.length - this.assemLen;
 
                 System.arraycopy(this.assemBuf, 0, this.recordBuf, 0,
@@ -364,5 +368,3 @@ public class TarOutputStream extends FilterOutputStream {
         this.buffer.writeRecord(this.recordBuf);
     }
 }
-
-

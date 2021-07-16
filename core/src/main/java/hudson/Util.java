@@ -43,7 +43,19 @@ import org.apache.tools.ant.types.FileSet;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintStream;
+import java.io.Reader;
+import java.io.StringReader;
+import java.io.Writer;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.InetAddress;
@@ -76,7 +88,20 @@ import java.text.ParseException;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Date;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.MissingResourceException;
+import java.util.Properties;
+import java.util.ResourceBundle;
+import java.util.Set;
+import java.util.SimpleTimeZone;
+import java.util.StringTokenizer;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
@@ -860,7 +885,7 @@ public class Util {
         // Encode control chars and space
         for (i = 0; i < 33; i++) uriMap[i] = true;
         for (int j = 0; j < raw.length(); i++, j++)
-            uriMap[i] = (raw.charAt(j) == ' ');
+            uriMap[i] = raw.charAt(j) == ' ';
         // If we add encodeQuery() just add a 2nd map to encode &+=
         // queryMap[38] = queryMap[43] = queryMap[61] = true;
     }
@@ -1135,7 +1160,9 @@ public class Util {
 
     /**
      * Concatenate multiple strings by inserting a separator.
+     * @deprecated since TODO; use {@link String#join(CharSequence, Iterable)}
      */
+    @Deprecated
     @NonNull
     public static String join(@NonNull Collection<?> strings, @NonNull String separator) {
         StringBuilder buf = new StringBuilder();
@@ -1387,7 +1414,7 @@ public class Util {
      * but don't remember it right now.
      *
      * @since 1.204
-     * @deprecated since 2008-05-13. This method is broken (see ISSUE#1666). It should probably
+     * @deprecated since 2008-05-13. This method is broken (see JENKINS-1666). It should probably
      * be removed but I'm not sure if it is considered part of the public API
      * that needs to be maintained for backwards compatibility.
      * Use {@link #encode(String)} instead.
@@ -1422,7 +1449,7 @@ public class Util {
      */
     @CheckForNull
     public static Number tryParseNumber(@CheckForNull String numberStr, @CheckForNull Number defaultNumber) {
-        if ((numberStr == null) || (numberStr.length() == 0)) {
+        if (numberStr == null || numberStr.length() == 0) {
             return defaultNumber;
         }
         try {
@@ -1474,7 +1501,7 @@ public class Util {
      * @throws IllegalArgumentException When {@code derived} does not derive from {@code base}, or when {@code base}
      *                                  does not contain the specified method.
      * @throws AbstractMethodError If the derived class doesn't override the given method.
-     * @since TODO
+     * @since 2.259
      */
     public static <T> T ifOverridden(Supplier<T> supplier, @NonNull Class<?> base, @NonNull Class<?> derived, @NonNull String methodName, @NonNull Class<?>... types) {
         if (isOverridden(base, derived, methodName, types)) {
@@ -1561,10 +1588,10 @@ public class Util {
      * implementing this by ourselves allow it to be more lenient about
      * escaping of URI.
      *
-     * @deprecated Use {@code isAbsoluteOrSchemeRelativeUri} instead if your goal is to prevent open redirects
+     * @deprecated Use {@link #isSafeToRedirectTo} instead if your goal is to prevent open redirects
      */
     @Deprecated
-    @RestrictedSince("1.651.2 / 2.TODO")
+    @RestrictedSince("1.651.2 / 2.3")
     @Restricted(NoExternalUse.class)
     public static boolean isAbsoluteUri(@NonNull String uri) {
         int idx = uri.indexOf(':');
@@ -1788,5 +1815,6 @@ public class Util {
      * overwritten by Jenkins erroneously.
      */
     @Restricted(value = NoExternalUse.class)
+    @SuppressFBWarnings("MS_SHOULD_BE_FINAL")
     public static boolean NATIVE_CHMOD_MODE = SystemProperties.getBoolean(Util.class.getName() + ".useNativeChmodAndMode");
 }

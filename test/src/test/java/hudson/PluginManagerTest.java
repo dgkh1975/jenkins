@@ -254,9 +254,6 @@ public class PluginManagerTest {
     
     /**
      * call org.jenkinsci.plugins.dependencytest.depender.Depender.getValue().
-     * 
-     * @return
-     * @throws Exception
      */
     private String callDependerValue() throws Exception {
         Class<?> c = r.jenkins.getPluginManager().uberClassLoader.loadClass("org.jenkinsci.plugins.dependencytest.depender.Depender");
@@ -267,8 +264,6 @@ public class PluginManagerTest {
     /**
      * Load "dependee" and then load "depender".
      * Asserts that "depender" can access to "dependee".
-     * 
-     * @throws Exception
      */
     @Test public void installDependingPluginWithoutRestart() throws Exception {
         // Load dependee.
@@ -301,8 +296,6 @@ public class PluginManagerTest {
     /**
      * Load "depender" and then load "dependee".
      * Asserts that "depender" can access to "dependee".
-     * 
-     * @throws Exception
      */
     @Issue("JENKINS-19976")
     @Test public void installDependedPluginWithoutRestart() throws Exception {
@@ -342,8 +335,6 @@ public class PluginManagerTest {
     /**
      * Load "optional-depender" and then load "dependee".
      * Asserts that "depender" can access to "dependee".
-     *
-     * @throws Exception
      */
     @Issue("JENKINS-60449")
     @WithPlugin("variant.hpi")
@@ -545,8 +536,8 @@ public class PluginManagerTest {
                 if(job instanceof UpdateCenter.DownloadJob) {
 		    UpdateCenter.DownloadJob j = (UpdateCenter.DownloadJob)job;
 		    assertFalse(j.status instanceof UpdateCenter.DownloadJob.Failure);
-                    done &= !(((j.status instanceof UpdateCenter.DownloadJob.Pending) || 
-			(j.status instanceof UpdateCenter.DownloadJob.Installing)));
+                    done &= !(j.status instanceof UpdateCenter.DownloadJob.Pending ||
+			j.status instanceof UpdateCenter.DownloadJob.Installing);
                 }		
             }
         } while(!done);
@@ -631,7 +622,7 @@ public class PluginManagerTest {
         assertTrue(iconShim.isDeprecated());
         List<UpdateSite.Deprecation> deprecations = iconShim.getDeprecations();
         assertEquals(1, deprecations.size());
-        assertEquals("https://jenkins.io/deprecations/icon-shim/", deprecations.get(0).url);
+        assertEquals("https://www.jenkins.io/deprecations/icon-shim/", deprecations.get(0).url);
         assertEquals("https://wiki.jenkins-ci.org/display/JENKINS/Icon+Shim+Plugin", iconShim.getInfo().wiki);
 
         final PluginWrapper tokenMacro = pm.getPlugin("token-macro");
@@ -646,7 +637,7 @@ public class PluginManagerTest {
         assertTrue(variant.isDeprecated());
         deprecations = variant.getDeprecations();
         assertEquals(1, deprecations.size());
-        assertEquals("https://jenkins.io/deprecations/variant/", deprecations.get(0).url);
+        assertEquals("https://www.jenkins.io/deprecations/variant/", deprecations.get(0).url);
         assertNull(variant.getInfo());
     }
 
@@ -658,9 +649,49 @@ public class PluginManagerTest {
         Assert.assertNull("This test requires the plugin with ID 'legacy' to not exist in update sites", uc.getPlugin("legacy"));
 
         // ensure data is loaded - probably unnecessary, but closer to reality
-        Assert.assertSame(uc.getSite("default").updateDirectlyNow().kind, FormValidation.Kind.OK);
+        Assert.assertSame(FormValidation.Kind.OK, uc.getSite("default").updateDirectlyNow().kind);
 
         // This would throw NPE
         uc.getPluginsWithUnavailableUpdates();
+    }
+
+    @Test @Issue("JENKINS-64840")
+    public void searchMultipleUpdateSites() throws Exception {
+        PersistedList<UpdateSite> sites = r.jenkins.getUpdateCenter().getSites();
+        sites.clear();
+        URL url = PluginManagerTest.class.getResource("/plugins/search-test-update-center1.json");
+        UpdateSite site = new UpdateSite(UpdateCenter.ID_DEFAULT, url.toString());
+        sites.add(site);
+        assertEquals(FormValidation.ok(), site.updateDirectly(false).get());
+        assertNotNull(site.getData());
+        url = PluginManagerTest.class.getResource("/plugins/search-test-update-center2.json");
+        site = new UpdateSite("secondary", url.toString());
+        sites.add(site);
+        final Future<FormValidation> future = site.updateDirectly(false);
+        if (future != null) {
+            assertEquals(FormValidation.ok(), future.get());
+        }
+        assertNotNull(site.getData());
+
+        //Dummy plugin is found in the second site (should have worked before the fix)
+        JenkinsRule.JSONWebResponse response = r.getJSON("pluginManager/pluginsSearch?query=dummy&limit=5");
+        JSONObject json = response.getJSONObject();
+        assertTrue(json.has("data"));
+        JSONArray data = json.getJSONArray("data");
+        assertEquals("Should be one search hit for dummy", 1, data.size());
+
+        //token-macro plugin is found in the first site (didn't work before the fix)
+        response = r.getJSON("pluginManager/pluginsSearch?query=token&limit=5");
+        json = response.getJSONObject();
+        assertTrue(json.has("data"));
+        data = json.getJSONArray("data");
+        assertEquals("Should be one search hit for token", 1, data.size());
+
+        //hello-world plugin is found in the first site and hello-huston in the second (didn't work before the fix)
+        response = r.getJSON("pluginManager/pluginsSearch?query=hello&limit=5");
+        json = response.getJSONObject();
+        assertTrue(json.has("data"));
+        data = json.getJSONArray("data");
+        assertEquals("Should be two search hits for hello", 2, data.size());
     }
 }

@@ -110,17 +110,6 @@ public class HistoryPageFilter<T> {
      * Add build items to the History page.
      *
      * @param runItems The items to be added. Assumes the items are in descending queue ID order i.e. newest first.
-     * @deprecated Replaced by add(Iterable&lt;T&gt;) as of version 2.15
-     */
-    @Deprecated
-    public void add(@NonNull List<T> runItems) {
-        addInternal(runItems);
-    }
-
-    /**
-     * Add build items to the History page.
-     *
-     * @param runItems The items to be added. Assumes the items are in descending queue ID order i.e. newest first.
      * @since 2.17
      */
     public void add(@NonNull Iterable<T> runItems) {
@@ -304,7 +293,7 @@ public class HistoryPageFilter<T> {
     }
 
     private boolean isFull() {
-        return (size() >= maxEntries);
+        return size() >= maxEntries;
     }
 
     /**
@@ -313,7 +302,7 @@ public class HistoryPageFilter<T> {
      * @return The number of items required to fill the page.
      */
     private int getFillCount() {
-        return Math.max(0, (maxEntries - size()));
+        return Math.max(0, maxEntries - size());
     }
 
     private boolean fitsSearchParams(@NonNull Queue.Item item) {

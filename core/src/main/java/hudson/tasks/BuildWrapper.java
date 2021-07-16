@@ -29,7 +29,14 @@ import hudson.DescriptorExtensionList;
 import hudson.LauncherDecorator;
 import hudson.Util;
 import hudson.console.ConsoleLogFilter;
-import hudson.model.*;
+import hudson.model.AbstractBuild;
+import hudson.model.AbstractDescribableImpl;
+import hudson.model.AbstractProject;
+import hudson.model.Action;
+import hudson.model.Build;
+import hudson.model.BuildListener;
+import hudson.model.Descriptor;
+import hudson.model.Project;
 import hudson.model.Run.RunnerAbortedException;
 import hudson.util.ArgumentListBuilder;
 import jenkins.model.Jenkins;
@@ -101,6 +108,7 @@ public abstract class BuildWrapper extends AbstractDescribableImpl<BuildWrapper>
          *      and reports a nice error message.
          * @since 1.150
          */
+        @Override
         public boolean tearDown( AbstractBuild build, BuildListener listener ) throws IOException, InterruptedException {
             if (build instanceof Build)
                 return tearDown((Build)build, listener);

@@ -68,6 +68,7 @@ public abstract class DirScanner implements Serializable {
             }
         }
 
+        @Override
         public void scan(File dir, FileVisitor visitor) throws IOException {
             scan(dir,"",visitor);
         }
@@ -116,7 +117,7 @@ public abstract class DirScanner implements Serializable {
         }
 
         /**
-         * @since TODO
+         * @since 2.275 and 2.263.2
          */
         @Restricted(NoExternalUse.class)
         public Glob(String includes, String excludes, boolean useDefaultExcludes, boolean followSymlinks) {
@@ -126,6 +127,7 @@ public abstract class DirScanner implements Serializable {
             this.followSymlinks = followSymlinks;
         }
 
+        @Override
         public void scan(File dir, FileVisitor visitor) throws IOException {
             if(fixEmpty(includes)==null && excludes==null) {
                 // optimization

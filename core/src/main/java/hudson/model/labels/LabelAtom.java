@@ -33,8 +33,12 @@ import hudson.XmlFile;
 import hudson.model.Action;
 import hudson.model.Descriptor.FormException;
 import hudson.model.Failure;
-import hudson.model.FileParameterValue;
-import hudson.util.*;
+import hudson.util.DescribableList;
+import hudson.util.EditDistance;
+import hudson.util.FormApply;
+import hudson.util.QuotedStringTokenizer;
+import hudson.util.VariableResolver;
+import hudson.util.XStream2;
 import jenkins.model.Jenkins;
 import hudson.model.Label;
 import hudson.model.Saveable;
@@ -42,7 +46,6 @@ import hudson.model.listeners.SaveableListener;
 import jenkins.util.SystemProperties;
 import org.kohsuke.accmod.Restricted;
 import org.kohsuke.accmod.restrictions.DoNotUse;
-import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.StaplerResponse;
 import org.kohsuke.stapler.export.Exported;
@@ -132,6 +135,7 @@ public class LabelAtom extends Label implements Saveable {
     /**
      * @since 1.580
      */
+    @Override
     public String getDescription() {
         return description;
     }
@@ -177,6 +181,7 @@ public class LabelAtom extends Label implements Saveable {
         return new XmlFile(XSTREAM, new File(Jenkins.get().root, "labels/"+name+".xml"));
     }
 
+    @Override
     public void save() throws IOException {
         if (isInvalidName()) {
             throw new IOException("Invalid label");
@@ -304,10 +309,12 @@ public class LabelAtom extends Label implements Saveable {
             super(XSTREAM);
         }
 
+        @Override
         public boolean canConvert(Class type) {
             return LabelAtom.class.isAssignableFrom(type);
         }
 
+        @Override
         public void marshal(Object source, HierarchicalStreamWriter writer, MarshallingContext context) {
             if (context.get(IN_NESTED)==null) {
                 context.put(IN_NESTED,true);
@@ -320,6 +327,7 @@ public class LabelAtom extends Label implements Saveable {
                 leafLabelConverter.marshal(source,writer,context);
         }
 
+        @Override
         public Object unmarshal(HierarchicalStreamReader reader, UnmarshallingContext context) {
             if (context.get(IN_NESTED)==null) {
                 context.put(IN_NESTED,true);

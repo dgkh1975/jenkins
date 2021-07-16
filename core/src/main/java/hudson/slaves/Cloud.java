@@ -104,6 +104,7 @@ public abstract class Cloud extends Actionable implements ExtensionPoint, Descri
         this.name = name;
     }
 
+    @Override
     public String getDisplayName() {
         return name;
     }
@@ -118,10 +119,12 @@ public abstract class Cloud extends Actionable implements ExtensionPoint, Descri
         return "cloud/" + name;
     }
 
+    @Override
     public @NonNull String getSearchUrl() {
         return getUrl();
     }
 
+    @Override
     public ACL getACL() {
         return Jenkins.get().getAuthorizationStrategy().getACL(this);
     }
@@ -221,6 +224,7 @@ public abstract class Cloud extends Actionable implements ExtensionPoint, Descri
         return canProvision(state.getLabel());
     }
 
+    @Override
     public Descriptor<Cloud> getDescriptor() {
         return Jenkins.get().getDescriptorOrDie(getClass());
     }
@@ -254,7 +258,7 @@ public abstract class Cloud extends Actionable implements ExtensionPoint, Descri
 
     /**
      * Parameter object for {@link hudson.slaves.Cloud}.
-     * @since TODO
+     * @since 2.259
      */
     public static final class CloudState {
         /**
