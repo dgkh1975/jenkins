@@ -34,20 +34,23 @@ import hudson.model.Item;
 import hudson.model.ListView;
 import hudson.model.View;
 import jenkins.model.Jenkins;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.MockAuthorizationStrategy;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
 /**
  * @author pjanouse
  */
-public class AddJobToViewCommandTest extends ViewManipulationTestBase {
+@WithJenkins
+class AddJobToViewCommandTest extends ViewManipulationTestBase {
 
     @Override
-    public CLICommandInvoker getCommand() {
+    protected CLICommandInvoker getCommand() {
         return new CLICommandInvoker(j, "add-job-to-view");
     }
 
-    @Test public void addJobShouldSucceed() throws Exception {
+    @Test
+    void addJobShouldSucceed() throws Exception {
 
         j.jenkins.addView(new ListView("aView"));
         FreeStyleProject project = j.createFreeStyleProject("aProject");
@@ -64,7 +67,8 @@ public class AddJobToViewCommandTest extends ViewManipulationTestBase {
         assertThat(j.jenkins.getView("aView").contains(project), equalTo(true));
     }
 
-    @Test public void addJobShouldSucceedEvenAlreadyAdded () throws Exception {
+    @Test
+    void addJobShouldSucceedEvenAlreadyAdded() throws Exception {
 
         FreeStyleProject project = j.createFreeStyleProject("aProject");
 
@@ -83,7 +87,8 @@ public class AddJobToViewCommandTest extends ViewManipulationTestBase {
         assertThat(j.jenkins.getView("aView").contains(project), equalTo(true));
     }
 
-    @Test public void addJobManyShouldSucceed() throws Exception {
+    @Test
+    void addJobManyShouldSucceed() throws Exception {
 
         j.jenkins.addView(new ListView("aView"));
         FreeStyleProject project1 = j.createFreeStyleProject("aProject1");
@@ -100,10 +105,11 @@ public class AddJobToViewCommandTest extends ViewManipulationTestBase {
         assertThat(result, succeededSilently());
         assertThat(j.jenkins.getView("aView").getAllItems().size(), equalTo(2));
         assertThat(j.jenkins.getView("aView").contains(project1), equalTo(true));
-        assertThat(j.jenkins.getView("aView").contains(project2 ), equalTo(true));
+        assertThat(j.jenkins.getView("aView").contains(project2), equalTo(true));
     }
 
-    @Test public void addJobManyShouldSucceedEvenAJobIsSpecifiedTwice() throws Exception {
+    @Test
+    void addJobManyShouldSucceedEvenAJobIsSpecifiedTwice() throws Exception {
 
         j.jenkins.addView(new ListView("aView"));
         FreeStyleProject project = j.createFreeStyleProject("aProject");

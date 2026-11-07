@@ -8,8 +8,8 @@ import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.mapper.Mapper;
 import hudson.ExtensionPoint;
-import hudson.model.AbstractDescribableImpl;
 import hudson.model.AbstractProject;
+import hudson.model.Describable;
 import hudson.model.Job;
 import hudson.model.Run;
 import hudson.tasks.LogRotator;
@@ -26,7 +26,7 @@ import java.io.IOException;
  * @author Kohsuke Kawaguchi
  * @since 1.503
  */
-public abstract class BuildDiscarder extends AbstractDescribableImpl<BuildDiscarder> implements ExtensionPoint {
+public abstract class BuildDiscarder implements Describable<BuildDiscarder>, ExtensionPoint {
     /**
      * Called to perform "garbage collection" on the job to discard old build records.
      *
@@ -37,11 +37,11 @@ public abstract class BuildDiscarder extends AbstractDescribableImpl<BuildDiscar
      *
      * @see Job#logRotate()
      */
-    public abstract void perform(Job<?,?> job) throws IOException, InterruptedException;
+    public abstract void perform(Job<?, ?> job) throws IOException, InterruptedException;
 
     @Override
     public BuildDiscarderDescriptor getDescriptor() {
-        return (BuildDiscarderDescriptor)super.getDescriptor();
+        return (BuildDiscarderDescriptor) Describable.super.getDescriptor();
     }
 
     /**
@@ -55,7 +55,7 @@ public abstract class BuildDiscarder extends AbstractDescribableImpl<BuildDiscar
         private RobustReflectionConverter ref;
 
         public ConverterImpl(Mapper m) {
-            ref = new RobustReflectionConverter(m,new JVM().bestReflectionProvider()) {
+            ref = new RobustReflectionConverter(m, JVM.newReflectionProvider()) {
                 @Override
                 protected Object instantiateNewInstance(HierarchicalStreamReader reader, UnmarshallingContext context) {
                     return reflectionProvider.newInstance(LogRotator.class);
@@ -72,12 +72,12 @@ public abstract class BuildDiscarder extends AbstractDescribableImpl<BuildDiscar
         @Override
         public Object unmarshal(HierarchicalStreamReader reader, UnmarshallingContext context) {
             // force unmarshal as LogRotator
-            return ref.unmarshal(reader,context);
+            return ref.unmarshal(reader, context);
         }
 
         @Override
         public boolean canConvert(Class type) {
-            return type==BuildDiscarder.class;
+            return type == BuildDiscarder.class;
         }
     }
 }

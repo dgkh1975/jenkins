@@ -21,10 +21,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
 package hudson.lifecycle;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import hudson.Extension;
+import hudson.util.BootFailure;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jenkins.model.Jenkins;
@@ -42,7 +43,6 @@ import org.kohsuke.accmod.restrictions.NoExternalUse;
  * @author Alon Bar-Lev
  */
 @Restricted(NoExternalUse.class)
-@Extension
 public class ExitLifecycle extends Lifecycle {
 
     private static final Logger LOGGER = Logger.getLogger(ExitLifecycle.class.getName());
@@ -65,10 +65,15 @@ public class ExitLifecycle extends Lifecycle {
             if (jenkins != null) {
                 jenkins.cleanUp();
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             LOGGER.log(Level.SEVERE, "Failed to clean up. Restart will continue.", e);
         }
 
         System.exit(exitOnRestart);
+    }
+
+    @Override
+    public void onBootFailure(BootFailure problem) {
+        restart();
     }
 }

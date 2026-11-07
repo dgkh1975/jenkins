@@ -21,46 +21,53 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
 package jenkins.diagnostics;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import hudson.model.AdministrativeMonitor;
 import hudson.model.ProjectTest;
 import hudson.model.Slave;
 import java.io.IOException;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
-public class ControllerExecutorsNoAgentsTest {
-    
-    @Rule
-    public JenkinsRule j = new JenkinsRule();
-    
+@WithJenkins
+class ControllerExecutorsNoAgentsTest {
+
+    private JenkinsRule j;
+
+    @BeforeEach
+    void setUp(JenkinsRule rule) {
+        j = rule;
+    }
+
     @Test
-    public void testInitial() {
+    void testInitial() {
         ControllerExecutorsNoAgents monitor = j.jenkins.getExtensionList(AdministrativeMonitor.class).get(ControllerExecutorsNoAgents.class);
         assertTrue(monitor.isActivated());
     }
 
     @Test
-    public void testControllerExecutorsZero() throws IOException {
+    void testControllerExecutorsZero() throws IOException {
         j.jenkins.setNumExecutors(0);
         ControllerExecutorsNoAgents monitor = j.jenkins.getExtensionList(AdministrativeMonitor.class).get(ControllerExecutorsNoAgents.class);
         assertFalse(monitor.isActivated());
     }
 
     @Test
-    public void testHasAgent() throws Exception {
+    void testHasAgent() throws Exception {
         Slave agent = j.createSlave();
         ControllerExecutorsNoAgents monitor = j.jenkins.getExtensionList(AdministrativeMonitor.class).get(ControllerExecutorsNoAgents.class);
         assertFalse(monitor.isActivated());
     }
 
     @Test
-    public void testHasCloud() throws Exception {
+    void testHasCloud() {
         ProjectTest.DummyCloudImpl2 c2 = new ProjectTest.DummyCloudImpl2(j, 0);
         j.jenkins.clouds.add(c2);
         ControllerExecutorsNoAgents monitor = j.jenkins.getExtensionList(AdministrativeMonitor.class).get(ControllerExecutorsNoAgents.class);

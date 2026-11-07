@@ -21,6 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
 package jenkins.tasks.filters.impl;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
@@ -40,7 +41,6 @@ import jenkins.tasks.filters.EnvVarsFilterLocalRule;
 import jenkins.tasks.filters.EnvVarsFilterLocalRuleDescriptor;
 import jenkins.tasks.filters.EnvVarsFilterRuleContext;
 import jenkins.tasks.filters.EnvVarsFilterableBuilder;
-import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.Symbol;
 import org.jvnet.localizer.Localizable;
 import org.kohsuke.accmod.Restricted;
@@ -86,7 +86,7 @@ public class RetainVariablesLocalRule implements EnvVarsFilterLocalRule {
         String[] variablesArray = variablesCommaSeparated.split("\\s+");
         List<String> variables = new ArrayList<>();
         for (String nameFragment : variablesArray) {
-            if (StringUtils.isNotBlank(nameFragment)) {
+            if (nameFragment != null && !nameFragment.isBlank()) {
                 variables.add(nameFragment.toLowerCase(Locale.ENGLISH));
             }
         }
@@ -155,18 +155,20 @@ public class RetainVariablesLocalRule implements EnvVarsFilterLocalRule {
                             variablesRemoved.add(variableName);
                             iterator.remove();
                             break;
+                        default:
+                            throw new AssertionError("Unknown process variables handling: " + processVariablesHandling);
                     }
                 }
             }
         }
 
         if (!variablesRemoved.isEmpty()) {
-            context.getTaskListener().getLogger().println(Messages.RetainVariablesLocalRule_RemovalMessage(getDescriptor().getDisplayName(), StringUtils.join(variablesRemoved.toArray(), ", ")));
+            context.getTaskListener().getLogger().println(Messages.RetainVariablesLocalRule_RemovalMessage(getDescriptor().getDisplayName(), String.join(", ", variablesRemoved)));
         }
         if (!variablesReset.isEmpty()) {
             // reset the variables using the initial value from System
             variablesReset.forEach(variableName -> envVars.put(variableName, systemEnvVars.get(variableName)));
-            context.getTaskListener().getLogger().println(Messages.RetainVariablesLocalRule_ResetMessage(getDescriptor().getDisplayName(), StringUtils.join(variablesReset.toArray(), ", ")));
+            context.getTaskListener().getLogger().println(Messages.RetainVariablesLocalRule_ResetMessage(getDescriptor().getDisplayName(), String.join(", ", variablesReset)));
         }
     }
 

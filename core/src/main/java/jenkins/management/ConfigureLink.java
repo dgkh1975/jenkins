@@ -39,7 +39,7 @@ public class ConfigureLink extends ManagementLink {
 
     @Override
     public String getIconFileName() {
-        return "gear.png";
+        return "symbol-settings";
     }
 
     @Override
@@ -56,6 +56,11 @@ public class ConfigureLink extends ManagementLink {
     @Override
     public Permission getRequiredPermission() {
         return Jenkins.READ;
+    }
+
+    @Override
+    public boolean hasRequiredPermission() {
+        return Jenkins.get().hasAnyPermission(Jenkins.MANAGE_AND_SYSTEM_READ);
     }
 
     @Override

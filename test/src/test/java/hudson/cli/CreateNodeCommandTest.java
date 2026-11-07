@@ -31,31 +31,36 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import hudson.model.Computer;
 import hudson.model.Messages;
 import hudson.model.Node;
 import hudson.model.Slave;
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import jenkins.model.Jenkins;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
-public class CreateNodeCommandTest {
+@WithJenkins
+class CreateNodeCommandTest {
 
     private CLICommandInvoker command;
 
-    @Rule public final JenkinsRule j = new JenkinsRule();
+    private JenkinsRule j;
 
-    @Before public void setUp() {
-
+    @BeforeEach
+    void setUp(JenkinsRule rule) {
+        j = rule;
         command = new CLICommandInvoker(j, new CreateNodeCommand());
     }
 
-    @Test public void createNodeShouldFailWithoutComputerCreatePermission() {
+    @Test
+    void createNodeShouldFailWithoutComputerCreatePermission() {
 
         final CLICommandInvoker.Result result = command
                 .authorizedTo(Jenkins.READ)
@@ -68,7 +73,8 @@ public class CreateNodeCommandTest {
         assertThat(result, failedWith(6));
     }
 
-    @Test public void createNode() {
+    @Test
+    void createNode() {
 
         final CLICommandInvoker.Result result = command
                 .authorizedTo(Computer.CREATE, Jenkins.READ)
@@ -83,7 +89,8 @@ public class CreateNodeCommandTest {
         assertThat(updated.getNumExecutors(), equalTo(42));
     }
 
-    @Test public void createNodeSpecifyingNameExplicitly() {
+    @Test
+    void createNodeSpecifyingNameExplicitly() {
 
         final CLICommandInvoker.Result result = command
                 .authorizedTo(Computer.CREATE, Jenkins.READ)
@@ -100,7 +107,8 @@ public class CreateNodeCommandTest {
         assertThat(updated.getNumExecutors(), equalTo(42));
     }
 
-    @Test public void createNodeSpecifyingDifferentNameExplicitly() throws Exception {
+    @Test
+    void createNodeSpecifyingDifferentNameExplicitly() throws Exception {
 
         final Node original = j.createSlave("AgentFromXml", null, null);
 
@@ -119,7 +127,8 @@ public class CreateNodeCommandTest {
         assertThat(updated.getNumExecutors(), equalTo(42));
     }
 
-    @Test public void createNodeShouldFailIfNodeAlreadyExist() throws Exception {
+    @Test
+    void createNodeShouldFailIfNodeAlreadyExist() throws Exception {
 
         j.createSlave("AgentFromXML", null, null);
 
@@ -134,7 +143,8 @@ public class CreateNodeCommandTest {
         assertThat(result, failedWith(4));
     }
 
-    @Test public void createNodeShouldFailIfNodeAlreadyExistWhenNameSpecifiedExplicitly() throws Exception {
+    @Test
+    void createNodeShouldFailIfNodeAlreadyExistWhenNameSpecifiedExplicitly() throws Exception {
 
         j.createSlave("ExistingAgent", null, null);
 
@@ -151,7 +161,7 @@ public class CreateNodeCommandTest {
 
     @Test
     @Issue("SECURITY-2021")
-    public void createNodeShouldFailIfNodeIsNotGood() {
+    void createNodeShouldFailIfNodeIsNotGood() {
         int nodeListSizeBefore = j.jenkins.getNodes().size();
 
         final CLICommandInvoker.Result result = command
@@ -162,9 +172,78 @@ public class CreateNodeCommandTest {
 
         assertThat(result.stderr(), containsString(Messages.Hudson_UnsafeChar('/')));
         assertThat(result, hasNoStandardOutput());
-        assertThat(result, failedWith(1));
+        assertThat(result, failedWith(8));
 
         // ensure not side effects
         assertEquals(nodeListSizeBefore, j.jenkins.getNodes().size());
+    }
+
+    @Test
+    @Issue("SECURITY-2424")
+    void cannotCreateNodeWithTrailingDot_withoutOtherNode() {
+        int nodeListSizeBefore = j.jenkins.getNodes().size();
+
+        CLICommandInvoker.Result result = command
+                .withStdin(new ByteArrayInputStream("<slave/>".getBytes(StandardCharsets.UTF_8)))
+                .invokeWithArgs("nodeA.")
+                ;
+
+        assertThat(result.stderr(), containsString(Messages.Hudson_TrailingDot()));
+        assertThat(result, hasNoStandardOutput());
+        assertThat(result, failedWith(8));
+
+        // ensure not side effects
+        assertEquals(nodeListSizeBefore, j.jenkins.getNodes().size());
+    }
+
+    @Test
+    @Issue("SECURITY-2424")
+    void cannotCreateNodeWithTrailingDot_withExistingNode() {
+        int nodeListSizeBefore = j.jenkins.getNodes().size();
+
+        assertThat(command.withStdin(new ByteArrayInputStream("<slave/>".getBytes(StandardCharsets.UTF_8))).invokeWithArgs("nodeA"), succeededSilently());
+        assertEquals(nodeListSizeBefore + 1, j.jenkins.getNodes().size());
+
+        CLICommandInvoker.Result result = command
+                .withStdin(new ByteArrayInputStream("<slave/>".getBytes(StandardCharsets.UTF_8)))
+                .invokeWithArgs("nodeA.")
+                ;
+
+        assertThat(result.stderr(), containsString(Messages.Hudson_TrailingDot()));
+        assertThat(result, hasNoStandardOutput());
+        assertThat(result, failedWith(8));
+
+        // ensure not side effects
+        assertEquals(nodeListSizeBefore + 1, j.jenkins.getNodes().size());
+    }
+
+    @Test
+    @Issue("SECURITY-2424")
+    void cannotCreateNodeWithTrailingDot_exceptIfEscapeHatchIsSet() {
+        String propName = Jenkins.NAME_VALIDATION_REJECTS_TRAILING_DOT_PROP;
+        String initialValue = System.getProperty(propName);
+        System.setProperty(propName, "false");
+        try {
+            int nodeListSizeBefore = j.jenkins.getNodes().size();
+
+            assertThat(command.withStdin(new ByteArrayInputStream("<slave/>".getBytes(StandardCharsets.UTF_8))).invokeWithArgs("nodeA"), succeededSilently());
+            assertEquals(nodeListSizeBefore + 1, j.jenkins.getNodes().size());
+
+            CLICommandInvoker.Result result = command
+                    .withStdin(new ByteArrayInputStream("<slave/>".getBytes(StandardCharsets.UTF_8)))
+                    .invokeWithArgs("nodeA.")
+                    ;
+
+            assertThat(result, succeededSilently());
+
+            assertEquals(nodeListSizeBefore + 2, j.jenkins.getNodes().size());
+        }
+        finally {
+            if (initialValue == null) {
+                System.clearProperty(propName);
+            } else {
+                System.setProperty(propName, initialValue);
+            }
+        }
     }
 }

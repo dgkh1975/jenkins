@@ -21,6 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
 package hudson.slaves;
 
 import static hudson.model.LoadStatistics.DECAY;
@@ -38,13 +39,13 @@ import hudson.model.MultiStageTimeSeries;
 import hudson.model.MultiStageTimeSeries.TimeScale;
 import hudson.model.Node;
 import hudson.model.PeriodicWork;
-import hudson.model.Queue;
 import java.awt.Color;
 import java.io.IOException;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -99,7 +100,7 @@ public class NodeProvisioner {
          * @param numExecutors The number of executors that will be provided by the launched {@link Node}.
          */
         public PlannedNode(String displayName, Future<Node> future, int numExecutors) {
-            if(displayName==null || future==null || numExecutors<1)  throw new IllegalArgumentException();
+            if (displayName == null || future == null || numExecutors < 1)  throw new IllegalArgumentException();
             this.displayName = displayName;
             this.future = future;
             this.numExecutors = numExecutors;
@@ -155,7 +156,7 @@ public class NodeProvisioner {
      * the comparison with other low-frequency only variables won't leave spikes.
      */
     private final MultiStageTimeSeries plannedCapacitiesEMA =
-            new MultiStageTimeSeries(Messages._NodeProvisioner_EmptyString(),Color.WHITE,0,DECAY);
+            new MultiStageTimeSeries(Messages._NodeProvisioner_EmptyString(), Color.WHITE, 0, DECAY);
 
     public NodeProvisioner(@CheckForNull Label label, LoadStatistics loadStatistics) {
         this.label = label;
@@ -206,8 +207,8 @@ public class NodeProvisioner {
      * Periodically invoked to keep track of the load.
      * Launches additional nodes if necessary.
      *
-     * Note: This method will obtain a lock on {@link #provisioningLock} first (to ensure that one and only one
-     * instance of this provisioner is running at a time) and then a lock on {@link Queue#lock}
+     * Note: This method will obtain a lock on {@link #provisioningLock} to ensure that one and only one
+     * instance of this provisioner is running at a time.
      */
     private void update() {
         long start = LOGGER.isLoggable(Level.FINER) ? System.nanoTime() : 0;
@@ -249,7 +250,7 @@ public class NodeProvisioner {
                                 LOGGER.log(Level.INFO,
                                         "{0} provisioning successfully completed. "
                                                 + "We have now {1,number,integer} computer(s)",
-                                        new Object[]{f.displayName, jenkins.getComputers().length});
+                                        new Object[]{f.displayName, jenkins.getComputersCollection().size()});
                                 fireOnCommit(f, node);
                             } catch (IOException e) {
                                 LOGGER.log(Level.WARNING,
@@ -318,7 +319,7 @@ public class NodeProvisioner {
             if (provisioningState != null) {
                 List<Strategy> strategies = Jenkins.get().getExtensionList(Strategy.class);
                 for (Strategy strategy : strategies.isEmpty()
-                        ? Collections.<Strategy>singletonList(new StandardStrategyImpl())
+                        ? List.of(new StandardStrategyImpl())
                         : strategies) {
                     LOGGER.log(Level.FINER, "Consulting {0} provisioning strategy with state {1}",
                             new Object[]{strategy, provisioningState});
@@ -681,14 +682,20 @@ public class NodeProvisioner {
                     excessWorkload = 1;
                 }
                 float m = calcThresholdMargin(state.getTotalSnapshot());
-                if (excessWorkload > 1 - m) {// and there's more work to do...
+                if (excessWorkload > 1 - m) { // and there's more work to do...
                     LOGGER.log(Level.FINE, "Excess workload {0,number,#.###} detected. "
                                     + "(planned capacity={1,number,#.###},connecting capacity={7,number,#.###},"
                                     + "Qlen={2,number,#.###},available={3,number,#.###}&{4,number,integer},"
                                     + "online={5,number,integer},m={6,number,#.###})",
                             new Object[]{
-                                    excessWorkload, plannedCapacity, qlen, available, snapshot.getAvailableExecutors(),
-                                    snapshot.getOnlineExecutors(), m , snapshot.getConnectingExecutors()
+                                    excessWorkload,
+                                    plannedCapacity,
+                                    qlen,
+                                    available,
+                                    snapshot.getAvailableExecutors(),
+                                    snapshot.getOnlineExecutors(),
+                                    m,
+                                    snapshot.getConnectingExecutors(),
                             });
 
                     CLOUD:
@@ -794,10 +801,10 @@ public class NodeProvisioner {
          * Give some initial warm up time so that statically connected agents
          * can be brought online before we start allocating more.
          */
-        @SuppressFBWarnings("MS_SHOULD_BE_FINAL")
-        public static int INITIALDELAY = SystemProperties.getInteger(NodeProvisioner.class.getName()+".initialDelay",LoadStatistics.CLOCK*10);
-        @SuppressFBWarnings("MS_SHOULD_BE_FINAL")
-        public static int RECURRENCEPERIOD = SystemProperties.getInteger(NodeProvisioner.class.getName()+".recurrencePeriod",LoadStatistics.CLOCK);
+        @SuppressFBWarnings(value = "MS_SHOULD_BE_FINAL", justification = "for script console")
+        public static int INITIALDELAY = (int) SystemProperties.getDuration(NodeProvisioner.class.getName() + ".initialDelay", ChronoUnit.MILLIS, Duration.ofMillis((long) LoadStatistics.CLOCK * 10)).toMillis();
+        @SuppressFBWarnings(value = "MS_SHOULD_BE_FINAL", justification = "for script console")
+        public static int RECURRENCEPERIOD = (int) SystemProperties.getDuration(NodeProvisioner.class.getName() + ".recurrencePeriod", ChronoUnit.MILLIS, Duration.ofMillis(LoadStatistics.CLOCK)).toMillis();
 
         @Override
         public long getInitialDelay() {
@@ -813,26 +820,26 @@ public class NodeProvisioner {
         protected void doRun() {
             Jenkins j = Jenkins.get();
             j.unlabeledNodeProvisioner.update();
-            for( Label l : j.getLabels() )
+            for (Label l : j.getLabels())
                 l.nodeProvisioner.update();
         }
     }
 
     private static final Logger LOGGER = Logger.getLogger(NodeProvisioner.class.getName());
-    private static final float MARGIN = SystemProperties.getInteger(NodeProvisioner.class.getName()+".MARGIN",10)/100f;
-    private static final float MARGIN0 = Math.max(MARGIN, getFloatSystemProperty(NodeProvisioner.class.getName()+".MARGIN0",0.5f));
-    private static final float MARGIN_DECAY = getFloatSystemProperty(NodeProvisioner.class.getName()+".MARGIN_DECAY",0.5f);
+    private static final float MARGIN = SystemProperties.getInteger(NodeProvisioner.class.getName() + ".MARGIN", 10) / 100f;
+    private static final float MARGIN0 = Math.max(MARGIN, getFloatSystemProperty(NodeProvisioner.class.getName() + ".MARGIN0", 0.5f));
+    private static final float MARGIN_DECAY = getFloatSystemProperty(NodeProvisioner.class.getName() + ".MARGIN_DECAY", 0.5f);
 
     // TODO: picker should be selectable
     private static final TimeScale TIME_SCALE = TimeScale.SEC10;
 
     private static float getFloatSystemProperty(String propName, float defaultValue) {
         String v = SystemProperties.getString(propName);
-        if (v!=null)
+        if (v != null)
             try {
                 return Float.parseFloat(v);
             } catch (NumberFormatException e) {
-                LOGGER.warning("Failed to parse a float value from system property "+propName+". value was "+v);
+                LOGGER.warning("Failed to parse a float value from system property " + propName + ". value was " + v);
             }
         return defaultValue;
     }

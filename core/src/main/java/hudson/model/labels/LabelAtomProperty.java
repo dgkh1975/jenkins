@@ -21,12 +21,13 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
 package hudson.model.labels;
 
 import hudson.DescriptorExtensionList;
 import hudson.ExtensionPoint;
-import hudson.model.AbstractDescribableImpl;
 import hudson.model.Action;
+import hudson.model.Describable;
 import java.util.Collection;
 import java.util.Collections;
 import jenkins.model.Jenkins;
@@ -45,7 +46,7 @@ import org.kohsuke.stapler.export.ExportedBean;
  * @since 1.373
  */
 @ExportedBean
-public class LabelAtomProperty extends AbstractDescribableImpl<LabelAtomProperty> implements ExtensionPoint {
+public class LabelAtomProperty implements Describable<LabelAtomProperty>, ExtensionPoint {
     /**
      * Contributes {@link Action}s to the label.
      *
@@ -59,7 +60,7 @@ public class LabelAtomProperty extends AbstractDescribableImpl<LabelAtomProperty
     /**
      * Lists up all the registered {@link LabelAtomPropertyDescriptor}s in the system.
      */
-    public static DescriptorExtensionList<LabelAtomProperty,LabelAtomPropertyDescriptor> all() {
+    public static DescriptorExtensionList<LabelAtomProperty, LabelAtomPropertyDescriptor> all() {
         return Jenkins.get().getDescriptorList(LabelAtomProperty.class);
     }
 }

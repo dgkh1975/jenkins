@@ -21,47 +21,47 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
 package jenkins.model;
 
-import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 import java.net.URL;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.Issue;
 import org.kohsuke.stapler.Stapler;
-import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.StaplerRequest2;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-public class JenkinsGetRootUrlTest {
+class JenkinsGetRootUrlTest {
 
     private Jenkins jenkins;
-    private StaplerRequest staplerRequest;
+    private StaplerRequest2 staplerRequest;
     private JenkinsLocationConfiguration config;
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         jenkins = mock(Jenkins.class, Mockito.CALLS_REAL_METHODS);
         config = mock(JenkinsLocationConfiguration.class);
-        staplerRequest = mock(StaplerRequest.class);
+        staplerRequest = mock(StaplerRequest2.class);
     }
 
     @Test
-    public void getConfiguredRootUrl() {
+    void getConfiguredRootUrl() {
         try (
                 MockedStatic<JenkinsLocationConfiguration> mocked = mockStatic(JenkinsLocationConfiguration.class);
                 MockedStatic<Stapler> mockedStapler = mockStatic(Stapler.class)
         ) {
             mocked.when(JenkinsLocationConfiguration::get).thenReturn(config);
-            mockedStapler.when(Stapler::getCurrentRequest).thenReturn(staplerRequest);
+            mockedStapler.when(Stapler::getCurrentRequest2).thenReturn(staplerRequest);
 
             configured("http://configured.host");
 
@@ -70,13 +70,13 @@ public class JenkinsGetRootUrlTest {
     }
 
     @Test
-    public void getAccessedRootUrl() {
+    void getAccessedRootUrl() {
         try (
                 MockedStatic<JenkinsLocationConfiguration> mocked = mockStatic(JenkinsLocationConfiguration.class);
                 MockedStatic<Stapler> mockedStapler = mockStatic(Stapler.class)
         ) {
             mocked.when(JenkinsLocationConfiguration::get).thenReturn(config);
-            mockedStapler.when(Stapler::getCurrentRequest).thenReturn(staplerRequest);
+            mockedStapler.when(Stapler::getCurrentRequest2).thenReturn(staplerRequest);
 
             accessing("https://real.host/jenkins/");
 
@@ -85,13 +85,13 @@ public class JenkinsGetRootUrlTest {
     }
 
     @Test
-    public void preferConfiguredOverAccessed() {
+    void preferConfiguredOverAccessed() {
         try (
                 MockedStatic<JenkinsLocationConfiguration> mocked = mockStatic(JenkinsLocationConfiguration.class);
                 MockedStatic<Stapler> mockedStapler = mockStatic(Stapler.class)
         ) {
             mocked.when(JenkinsLocationConfiguration::get).thenReturn(config);
-            mockedStapler.when(Stapler::getCurrentRequest).thenReturn(staplerRequest);
+            mockedStapler.when(Stapler::getCurrentRequest2).thenReturn(staplerRequest);
             configured("http://configured.host/");
             accessing("http://real.host/");
 
@@ -101,13 +101,13 @@ public class JenkinsGetRootUrlTest {
 
     @Issue("JENKINS-16368")
     @Test
-    public void doNotInheritProtocolWhenDispatchingRequest() {
+    void doNotInheritProtocolWhenDispatchingRequest() {
         try (
                 MockedStatic<JenkinsLocationConfiguration> mocked = mockStatic(JenkinsLocationConfiguration.class);
                 MockedStatic<Stapler> mockedStapler = mockStatic(Stapler.class)
         ) {
             mocked.when(JenkinsLocationConfiguration::get).thenReturn(config);
-            mockedStapler.when(Stapler::getCurrentRequest).thenReturn(staplerRequest);
+            mockedStapler.when(Stapler::getCurrentRequest2).thenReturn(staplerRequest);
             configured("http://configured.host/");
             accessing("https://real.host/");
 
@@ -117,28 +117,28 @@ public class JenkinsGetRootUrlTest {
 
     @Issue("JENKINS-16511")
     @Test
-    public void doNotInheritProtocolWhenDispatchingRequest2() {
+    void doNotInheritProtocolWhenDispatchingRequest2() {
         try (
                 MockedStatic<JenkinsLocationConfiguration> mocked = mockStatic(JenkinsLocationConfiguration.class);
                 MockedStatic<Stapler> mockedStapler = mockStatic(Stapler.class)
         ) {
             mocked.when(JenkinsLocationConfiguration::get).thenReturn(config);
-            mockedStapler.when(Stapler::getCurrentRequest).thenReturn(staplerRequest);
+            mockedStapler.when(Stapler::getCurrentRequest2).thenReturn(staplerRequest);
             configured("https://ci/jenkins/");
             accessing("http://localhost:8080/");
             rootUrlIs("https://ci/jenkins/");
         }
     }
-    
+
     @Issue("JENKINS-10675")
     @Test
-    public void useForwardedProtoWhenPresent() {
+    void useForwardedProtoWhenPresent() {
         try (
                 MockedStatic<JenkinsLocationConfiguration> mocked = mockStatic(JenkinsLocationConfiguration.class);
                 MockedStatic<Stapler> mockedStapler = mockStatic(Stapler.class)
         ) {
             mocked.when(JenkinsLocationConfiguration::get).thenReturn(config);
-            mockedStapler.when(Stapler::getCurrentRequest).thenReturn(staplerRequest);
+            mockedStapler.when(Stapler::getCurrentRequest2).thenReturn(staplerRequest);
             configured("https://ci/jenkins/");
 
             // Without a forwarded protocol, it should use the request protocol
@@ -173,13 +173,13 @@ public class JenkinsGetRootUrlTest {
 
     @Issue("JENKINS-58041")
     @Test
-    public void useForwardedProtoWithIPv6WhenPresent() {
+    void useForwardedProtoWithIPv6WhenPresent() {
         try (
                 MockedStatic<JenkinsLocationConfiguration> mocked = mockStatic(JenkinsLocationConfiguration.class);
                 MockedStatic<Stapler> mockedStapler = mockStatic(Stapler.class)
         ) {
             mocked.when(JenkinsLocationConfiguration::get).thenReturn(config);
-            mockedStapler.when(Stapler::getCurrentRequest).thenReturn(staplerRequest);
+            mockedStapler.when(Stapler::getCurrentRequest2).thenReturn(staplerRequest);
             configured("http://[::1]/jenkins/");
 
             // Without a forwarded protocol, it should use the request protocol
@@ -203,7 +203,7 @@ public class JenkinsGetRootUrlTest {
     }
 
     private void rootUrlFromRequestIs(final String expectedRootUrl) {
-        
+
         assertThat(jenkins.getRootUrlFromRequest(), equalTo(expectedRootUrl));
     }
 
@@ -216,9 +216,9 @@ public class JenkinsGetRootUrlTest {
 
         when(config.getUrl()).thenReturn(configuredHost);
     }
-    
+
     private void withHeader(String name, final String value) {
-        final StaplerRequest req = Stapler.getCurrentRequest();
+        final StaplerRequest2 req = Stapler.getCurrentRequest2();
         when(req.getHeader(name)).thenReturn(value);
     }
 
@@ -226,20 +226,18 @@ public class JenkinsGetRootUrlTest {
 
         final URL url = getUrl(realUrl);
 
-        final StaplerRequest req = mock(StaplerRequest.class);
+        final StaplerRequest2 req = mock(StaplerRequest2.class);
         when(req.getScheme()).thenReturn(url.getProtocol());
         when(req.getServerName()).thenReturn(url.getHost());
         when(req.getServerPort()).thenReturn(url.getPort() == -1 ? "https".equals(url.getProtocol()) ? 443 : 80 : url.getPort());
         when(req.getContextPath()).thenReturn(url.getPath().replaceAll("/$", ""));
-        when(req.getIntHeader(anyString())).thenAnswer(new Answer<Integer>() {
-            @Override public Integer answer(InvocationOnMock invocation) throws Throwable {
-                String name = (String) invocation.getArguments()[0];
-                String value = ((StaplerRequest) invocation.getMock()).getHeader(name);
-                return value != null ? Integer.parseInt(value) : -1;
-            }
+        when(req.getIntHeader(anyString())).thenAnswer((Answer<Integer>) invocation -> {
+            String name = (String) invocation.getArguments()[0];
+            String value = ((StaplerRequest2) invocation.getMock()).getHeader(name);
+            return value != null ? Integer.parseInt(value) : -1;
         });
 
-        when(Stapler.getCurrentRequest()).thenReturn(req);
+        when(Stapler.getCurrentRequest2()).thenReturn(req);
     }
 
     private URL getUrl(final String realUrl) {
@@ -247,7 +245,7 @@ public class JenkinsGetRootUrlTest {
         try {
 
             return new URL(realUrl);
-        } catch(Exception ex) {
+        } catch (Exception ex) {
 
             throw new RuntimeException(ex);
         }

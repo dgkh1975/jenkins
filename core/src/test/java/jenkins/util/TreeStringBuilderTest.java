@@ -1,25 +1,23 @@
 package jenkins.util;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests the class {@link TreeStringBuilder}.
  *
  * @author Kohsuke Kawaguchi
  */
-@SuppressWarnings({"PMD", "all"})
-//CHECKSTYLE:OFF
-public class TreeStringBuilderTest {
+class TreeStringBuilderTest {
     /**
      * Tests the simple operations inside the builder.
      */
     @Test
-    public void test() {
+    void test() {
         TreeStringBuilder b = new TreeStringBuilder();
         verify("foo", b.intern("foo"));
         TreeString s = b.intern("foo/bar/zot");
@@ -34,8 +32,8 @@ public class TreeStringBuilderTest {
      * Pseudo random (but deterministic) test.
      */
     @Test
-    public void testRandom() {
-        String[] dict = new String[]{"aa","b","aba","ba"};
+    void testRandom() {
+        String[] dict = new String[]{"aa", "b", "aba", "ba"};
         TreeStringBuilder x = new TreeStringBuilder();
         Random r = new Random(0);
 

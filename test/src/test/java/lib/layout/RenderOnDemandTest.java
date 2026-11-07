@@ -21,38 +21,54 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
 package lib.layout;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
-import com.gargoylesoftware.htmlunit.ScriptResult;
-import com.gargoylesoftware.htmlunit.WebClientUtil;
-import com.gargoylesoftware.htmlunit.html.HtmlElement;
-import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import hudson.model.InvisibleAction;
 import hudson.model.RootAction;
-import org.junit.Rule;
-import org.junit.Test;
+import hudson.widgets.RenderOnDemandClosure;
+import java.lang.ref.SoftReference;
+import java.lang.ref.WeakReference;
+import java.util.logging.Level;
+import org.htmlunit.ScriptResult;
+import org.htmlunit.WebClientUtil;
+import org.htmlunit.html.HtmlPage;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
+import org.jvnet.hudson.test.Issue;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.LogRecorder;
+import org.jvnet.hudson.test.MemoryAssert;
 import org.jvnet.hudson.test.TestExtension;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
 /**
  * Tests &lt;renderOnDemand> tag.
  *
  * @author Kohsuke Kawaguchi
  */
-public class RenderOnDemandTest {
+@WithJenkins
+class RenderOnDemandTest {
 
-    @Rule public JenkinsRule j = new JenkinsRule();
+    private JenkinsRule j;
+    private final LogRecorder logging = new LogRecorder().record(RenderOnDemandClosure.class, Level.FINE);
+
+    @BeforeEach
+    void setUp(JenkinsRule rule) {
+        j = rule;
+    }
 
     /**
      * Makes sure that the behavior rules are applied to newly inserted nodes,
      * even when multiple nodes are added.
      */
     @Test
-    public void testBehaviour() throws Exception {
+    void testBehaviour() throws Exception {
         HtmlPage p = j.createWebClient().goTo("self/testBehaviour");
 
         p.executeJavaScript("renderOnDemand(document.getElementsBySelector('.lazy')[0])");
@@ -61,51 +77,64 @@ public class RenderOnDemandTest {
 
         ScriptResult r = p.executeJavaScript("var r=document.getElementsBySelector('DIV.a'); r[0].innerHTML+r[1].innerHTML+r[2].innerHTML");
         WebClientUtil.waitForJSExec(p.getWebClient());
-        assertEquals("AlphaBravoCharlie",r.getJavaScriptResult().toString());
+        assertEquals("AlphaBravoCharlie", r.getJavaScriptResult().toString());
     }
 
-    /*
+    @Disabled("just informational")
+    @Issue("JENKINS-16341")
     @Test
-    public void testMemoryConsumption() throws Exception {
-        j.createWebClient().goTo("self/testBehaviour"); // prime caches
+    void testMemoryConsumption() throws Exception {
+        var wc = j.createWebClient();
+        callTestBehaviour(wc); // prime caches
         int total = 0;
-        for (MemoryAssert.HistogramElement element : MemoryAssert.increasedMemory(new Callable<Void>() {
-            @Override public Void call() throws Exception {
-                j.createWebClient().goTo("self/testBehaviour");
-                return null;
+        int count = 50;
+        for (var element : MemoryAssert.increasedMemory(() -> {
+            for (int i = 0; i < count; i++) {
+                System.err.println("#" + i);
+                callTestBehaviour(wc);
             }
-        }, new Filter() {
-            @Override public boolean accept(Object obj, Object referredFrom, Field reference) {
-                return !obj.getClass().getName().contains("htmlunit");
-            }
-        })) {
+            var o = new Object();
+            var sr = new SoftReference<>(o);
+            var wr = new WeakReference<>(o);
+            o = null;
+            MemoryAssert.assertGC(wr, true);
+            return null;
+        }, (obj, referredFrom, reference) -> !obj.getClass().getName().contains("htmlunit"))) {
             total += element.byteSize;
+            if (element.instanceCount == count) {
+                System.out.print("⚠ ️");
+            }
             System.out.println(element.className + " ×" + element.instanceCount + ": " + element.byteSize);
         }
         System.out.println("total: " + total);
     }
-    */
+
+    private void callTestBehaviour(JenkinsRule.WebClient wc) throws Exception {
+        var p = wc.goTo("self/testBehaviour");
+        p.executeJavaScript("renderOnDemand(document.getElementsBySelector('.lazy')[0])");
+        WebClientUtil.waitForJSExec(p.getWebClient());
+    }
 
     /**
      * Makes sure that scripts get evaluated.
      */
     @Test
-    public void testScript() throws Exception {
+    void testScript() throws Exception {
         HtmlPage p = j.createWebClient().goTo("self/testScript");
         assertNull(p.getElementById("loaded"));
 
-        ((HtmlElement)p.getElementById("button")).click();
+        p.getElementById("button").click();
         WebClientUtil.waitForJSExec(p.getWebClient());
         // all AJAX calls complete before the above method returns
         assertNotNull(p.getElementById("loaded"));
         ScriptResult r = p.executeJavaScript("x");
         WebClientUtil.waitForJSExec(p.getWebClient());
 
-        assertEquals("xxx",r.getJavaScriptResult().toString());
+        assertEquals("xxx", r.getJavaScriptResult().toString());
 
         r = p.executeJavaScript("y");
         WebClientUtil.waitForJSExec(p.getWebClient());
-        assertEquals("yyy",r.getJavaScriptResult().toString());
+        assertEquals("yyy", r.getJavaScriptResult().toString());
 
         // if you want to test this in the browser
         /*

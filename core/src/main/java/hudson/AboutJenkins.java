@@ -1,5 +1,6 @@
 package hudson;
 
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.model.ManagementLink;
 import hudson.security.Permission;
@@ -7,18 +8,19 @@ import java.net.URL;
 import jenkins.model.Jenkins;
 import org.jenkinsci.Symbol;
 import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.DoNotUse;
 import org.kohsuke.accmod.restrictions.NoExternalUse;
 
 /**
  * Show "About Jenkins" link.
- * 
+ *
  * @author Kohsuke Kawaguchi
  */
 @Extension @Symbol("about")
 public class AboutJenkins extends ManagementLink {
     @Override
     public String getIconFileName() {
-        return "help.png";
+        return "symbol-jenkins";
     }
 
     @Override
@@ -47,9 +49,25 @@ public class AboutJenkins extends ManagementLink {
         return Jenkins.READ;
     }
 
+    @Override
+    public boolean hasRequiredPermission() {
+        return Jenkins.get().hasAnyPermission(Jenkins.MANAGE_AND_SYSTEM_READ);
+    }
+
     @NonNull
     @Override
     public Category getCategory() {
         return Category.STATUS;
+    }
+
+    /**
+     * Used to display subpages for plugin information.
+     * @return the plugin with the given short name.
+     */
+    @CheckForNull
+    @Restricted(DoNotUse.class)
+    public PluginWrapper getPlugin(String shortName) {
+        Plugin plugin = Jenkins.get().getPlugin(shortName);
+        return plugin != null ? plugin.getWrapper() : null;
     }
 }

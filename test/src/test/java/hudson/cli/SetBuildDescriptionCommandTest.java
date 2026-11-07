@@ -40,28 +40,32 @@ import hudson.tasks.BatchFile;
 import hudson.tasks.Builder;
 import hudson.tasks.Shell;
 import jenkins.model.Jenkins;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
 /**
  * @author pjanouse
  */
-public class SetBuildDescriptionCommandTest {
+@WithJenkins
+class SetBuildDescriptionCommandTest {
 
     private CLICommandInvoker command;
 
-    @Rule public final JenkinsRule j = new JenkinsRule();
+    private JenkinsRule j;
 
-    @Before public void setUp() {
+    @BeforeEach
+    void setUp(JenkinsRule rule) {
+        j = rule;
         command = new CLICommandInvoker(j, "set-build-description");
     }
 
-    @Test public void setBuildDescriptionShouldFailWithoutJobReadPermission() throws Exception {
+    @Test
+    void setBuildDescriptionShouldFailWithoutJobReadPermission() throws Exception {
         FreeStyleProject project = j.createFreeStyleProject("aProject");
         project.getBuildersList().add(createScriptBuilder("echo 1"));
-        assertThat(project.scheduleBuild2(0).get().getLog(), containsString("echo 1"));
+        j.assertLogContains("echo 1", j.buildAndAssertSuccess(project));
 
         final CLICommandInvoker.Result result = command
                 .authorizedTo(Jenkins.READ)
@@ -71,10 +75,11 @@ public class SetBuildDescriptionCommandTest {
         assertThat(result.stderr(), containsString("ERROR: No such job 'aProject'"));
     }
 
-    @Test public void setBuildDescriptionShouldFailWithoutRunUpdatePermission1() throws Exception {
+    @Test
+    void setBuildDescriptionShouldFailWithoutRunUpdatePermission1() throws Exception {
         FreeStyleProject project = j.createFreeStyleProject("aProject");
         project.getBuildersList().add(createScriptBuilder("echo 1"));
-        assertThat(project.scheduleBuild2(0).get().getLog(), containsString("echo 1"));
+        j.assertLogContains("echo 1", j.buildAndAssertSuccess(project));
 
         final CLICommandInvoker.Result result = command
                 .authorizedTo(Item.READ, Jenkins.READ)
@@ -84,11 +89,12 @@ public class SetBuildDescriptionCommandTest {
         assertThat(result.stderr(), containsString("ERROR: user is missing the Run/Update permission"));
     }
 
-    @Test public void setBuildDescriptionShouldSucceed() throws Exception {
+    @Test
+    void setBuildDescriptionShouldSucceed() throws Exception {
         FreeStyleProject project = j.createFreeStyleProject("aProject");
         project.getBuildersList().add(createScriptBuilder("echo 1"));
-        FreeStyleBuild build = project.scheduleBuild2(0).get();
-        assertThat(build.getLog(), containsString("echo 1"));
+        FreeStyleBuild build = j.buildAndAssertSuccess(project);
+        j.assertLogContains("echo 1", build);
         assertThat(build.getDescription(), equalTo(null));
 
         CLICommandInvoker.Result result = command
@@ -110,7 +116,8 @@ public class SetBuildDescriptionCommandTest {
         assertThat(build.getDescription(), equalTo(" "));
     }
 
-    @Test public void setBuildDescriptionShouldFailIfJobDoesNotExist() {
+    @Test
+    void setBuildDescriptionShouldFailIfJobDoesNotExist() {
         final CLICommandInvoker.Result result = command
                 .authorizedTo(Run.UPDATE, Item.READ, Jenkins.READ)
                 .invokeWithArgs("never_created");
@@ -119,7 +126,8 @@ public class SetBuildDescriptionCommandTest {
         assertThat(result.stderr(), containsString("ERROR: No such job 'never_created'"));
     }
 
-    @Test public void setBuildDescriptionShouldFailIfJobDoesNotExistButNearExists() throws Exception {
+    @Test
+    void setBuildDescriptionShouldFailIfJobDoesNotExistButNearExists() throws Exception {
         j.createFreeStyleProject("never_created");
 
         final CLICommandInvoker.Result result = command
@@ -130,10 +138,11 @@ public class SetBuildDescriptionCommandTest {
         assertThat(result.stderr(), containsString("ERROR: No such job 'never_created1'; perhaps you meant 'never_created'?"));
     }
 
-    @Test public void setBuildDescriptionShouldFailIfBuildDoesNotExist() throws Exception {
+    @Test
+    void setBuildDescriptionShouldFailIfBuildDoesNotExist() throws Exception {
         FreeStyleProject project = j.createFreeStyleProject("aProject");
         project.getBuildersList().add(createScriptBuilder("echo 1"));
-        assertThat(project.scheduleBuild2(0).get().getLog(), containsString("echo 1"));
+        j.assertLogContains("echo 1", j.buildAndAssertSuccess(project));
 
         final CLICommandInvoker.Result result = command
                 .authorizedTo(Item.READ, Jenkins.READ)

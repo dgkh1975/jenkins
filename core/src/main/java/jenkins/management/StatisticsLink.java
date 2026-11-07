@@ -39,7 +39,7 @@ public class StatisticsLink extends ManagementLink {
 
     @Override
     public String getIconFileName() {
-        return "monitor.png";
+        return "symbol-analytics";
     }
 
     @Override
@@ -55,7 +55,7 @@ public class StatisticsLink extends ManagementLink {
     @NonNull
     @Override
     public Permission getRequiredPermission() {
-        return Jenkins.MANAGE;
+        return Jenkins.READ;
     }
 
     @Override

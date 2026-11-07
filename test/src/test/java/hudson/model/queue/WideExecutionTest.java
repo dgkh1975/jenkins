@@ -21,9 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
 package hudson.model.queue;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import hudson.model.AbstractBuild;
 import hudson.model.AbstractProject;
@@ -36,18 +37,24 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Collection;
 import java.util.Collections;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.TestExtension;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
 /**
  * @author Kohsuke Kawaguchi
  */
-public class WideExecutionTest {
+@WithJenkins
+class WideExecutionTest {
 
-    @Rule
-    public JenkinsRule j = new JenkinsRule();
+    private JenkinsRule j;
+
+    @BeforeEach
+    void setUp(JenkinsRule rule) {
+        j = rule;
+    }
 
     @TestExtension
     public static class Contributor extends SubTaskContributor {
@@ -66,7 +73,7 @@ public class WideExecutionTest {
                         @Override
                         public void run() {
                             WorkUnitContext wuc = Executor.currentExecutor().getCurrentWorkUnit().context;
-                            AbstractBuild b = (AbstractBuild)wuc.getPrimaryWorkUnit().getExecutable();
+                            AbstractBuild b = (AbstractBuild) wuc.getPrimaryWorkUnit().getExecutable();
                             try {
                                 b.setDescription("I was here");
                             } catch (IOException e) {
@@ -88,16 +95,16 @@ public class WideExecutionTest {
 
                 @Override
                 public String getDisplayName() {
-                    return "Company of "+p.getDisplayName();
+                    return "Company of " + p.getDisplayName();
                 }
             });
         }
     }
 
     @Test
-    public void run() throws Exception {
+    void run() throws Exception {
         FreeStyleProject p = j.createFreeStyleProject();
-        FreeStyleBuild b = j.assertBuildStatusSuccess(p.scheduleBuild2(0));
+        FreeStyleBuild b = j.buildAndAssertSuccess(p);
         assertEquals("I was here", b.getDescription());
     }
 }

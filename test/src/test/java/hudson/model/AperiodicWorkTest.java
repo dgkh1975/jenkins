@@ -7,24 +7,29 @@ import static org.hamcrest.Matchers.is;
 import hudson.ExtensionList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
-public class AperiodicWorkTest {
+@WithJenkins
+class AperiodicWorkTest {
 
-    @Rule
-    public JenkinsRule jr = new JenkinsRule();
+    private JenkinsRule jr;
 
+    @BeforeEach
+    void setUp(JenkinsRule rule) {
+        jr = rule;
+    }
 
     @Test
-    public void newExtensionsAreScheduled() throws Exception {
+    void newExtensionsAreScheduled() throws Exception {
         TestAperiodicWork tapw = new TestAperiodicWork();
 
         int size = AperiodicWork.all().size();
         ExtensionList.lookup(AperiodicWork.class).add(tapw);
 
-        assertThat("we have one new AperiodicWork", AperiodicWork.all(), hasSize(size+1));
+        assertThat("we have one new AperiodicWork", AperiodicWork.all(), hasSize(size + 1));
         assertThat("The task was run within 15 seconds", tapw.doneSignal.await(15, TimeUnit.SECONDS), is(true));
     }
 
